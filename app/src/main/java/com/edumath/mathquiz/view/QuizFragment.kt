@@ -23,7 +23,7 @@ class QuizFragment : Fragment(), QuizView {
     private var questionNumber = 0
     private var counterCorrect = 0
 
-    private lateinit var presenterImpl: QuizPresenterImpl<QuizView>
+    private lateinit var presenterImpl: QuizPresenterImpl
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,8 +37,7 @@ class QuizFragment : Fragment(), QuizView {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        presenterImpl = QuizPresenterImpl()
-        presenterImpl.attachView(this)
+        presenterImpl = QuizPresenterImpl(this)
         init()
     }
 
@@ -69,9 +68,7 @@ class QuizFragment : Fragment(), QuizView {
                     (answerField.text).toString().toInt(),
                     questionList[questionNumber].answer
                 )
-                if (correct) {
-                    counterCorrect++
-                }
+                if (correct) counterCorrect++
                 questionNumber++
                 presenterImpl.quizEnd(questionNumber)
             }
@@ -97,7 +94,6 @@ class QuizFragment : Fragment(), QuizView {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        presenterImpl.detachView(this)
         _binding = null
     }
 
