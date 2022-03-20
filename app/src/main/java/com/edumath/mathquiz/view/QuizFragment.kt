@@ -11,8 +11,9 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.edumath.mathquiz.databinding.FragmentQuizBinding
 import com.edumath.mathquiz.model.TestList
+import com.edumath.mathquiz.presenter.QuizPresenterImpl
 
-class QuizFragment: Fragment() {
+class QuizFragment : Fragment(), QuizView {
 
     private var _binding: FragmentQuizBinding? = null
     private val binding get() = _binding!!
@@ -21,6 +22,8 @@ class QuizFragment: Fragment() {
 
     private var questionNumber = 0
     private var counterCorrect = 0
+
+    private lateinit var presenterImpl: QuizPresenterImpl
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,11 +37,12 @@ class QuizFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        presenterImpl = QuizPresenterImpl(this)
         init()
     }
 
-    private fun init(){
-        with(binding){
+    private fun init() {
+        with(binding) {
             countQuiz.text = "Вопрос ${questionNumber + 1} из 15"
             question.text = questionList[questionNumber].text
 
@@ -60,9 +64,13 @@ class QuizFragment: Fragment() {
                 }
             }
             buttonAnswer.setOnClickListener {
-                val correct = checkAnswer((answerField.text).toString().toInt())
-                if (correct){ counterCorrect++ }
-                nextQuestion()
+                val correct = presenterImpl.checkAnswer(
+                    (answerField.text).toString().toInt(),
+                    questionList[questionNumber].answer
+                )
+                if (correct) counterCorrect++
+                questionNumber++
+                presenterImpl.quizEnd(questionNumber)
             }
             buttonClear.setOnClickListener {
                 answerField.text = ""
@@ -70,21 +78,23 @@ class QuizFragment: Fragment() {
         }
     }
 
-    private fun nextQuestion() {
-        questionNumber++
+    override fun nextQuestion() {
         binding.answerField.text = ""
-        if (questionNumber == questionList.size) {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Правильных ответов: $counterCorrect из 15")
-                .setPositiveButton("На главную"){ _, _ ->
-                    findNavController().popBackStack()
-                }
-                .show()
-        } else init()
+        init()
     }
 
-    private fun checkAnswer(answer: Int) : Boolean{
-        return answer == questionList[questionNumber].answer
+    override fun showResult() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Правильных ответов: $counterCorrect из 15")
+            .setPositiveButton("На главную") { _, _ ->
+                findNavController().popBackStack()
+            }
+            .show()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 
 }
